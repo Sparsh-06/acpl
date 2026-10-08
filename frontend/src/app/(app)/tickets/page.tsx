@@ -44,7 +44,6 @@ export default function TicketsPage() {
         }
       />
 
-      {/* Status filter */}
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {['', ...TICKET_STATUSES].map((value) => (
           <button

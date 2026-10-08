@@ -13,14 +13,12 @@ const role = z.enum(ROLES, 'Role must be ADMIN or USER');
 
 const createUserSchema = z.object({ name, email, password, role: role.default('USER') });
 
-// Every field is optional when editing; only the ones sent are changed.
 const updateUserSchema = z.object({ name, email, password, role, isActive: z.boolean() }).partial();
 
 const listUsersQuery = z.object({ q: z.string().trim().max(100).optional() });
 
 export const usersRouter = Router();
 
-// Every route in this router is admin-only, enforced here on the server.
 usersRouter.use(requireAuth, requireRole('ADMIN'));
 
 usersRouter.get('/', async (req, res) => {

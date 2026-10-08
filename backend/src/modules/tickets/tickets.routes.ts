@@ -24,11 +24,7 @@ const listTicketsQuery = z.object({
   status: status.optional(),
 });
 
-/**
- * Loads a ticket the current user is allowed to see: admins see every ticket,
- * users only their own. Other people's tickets return 404 (not 403) so users
- * can't tell whether a ticket id exists.
- */
+// 404 (not 403) for other users' tickets.
 async function findVisibleTicket(req: Request) {
   const user = currentUser(req);
   const id = objectId.safeParse(req.params.id);
@@ -47,7 +43,6 @@ ticketsRouter.get('/', async (req, res) => {
   const user = currentUser(req);
   const { q, status } = listTicketsQuery.parse(req.query);
 
-  // A regular user can only ever list their own tickets, whatever filters they send.
   const filter: Record<string, unknown> = user.role === 'ADMIN' ? {} : { createdBy: user._id };
   if (status) filter.status = status;
   if (q) {
@@ -73,7 +68,7 @@ ticketsRouter.get('/:id', async (req, res) => {
   res.json({ ticket, comments });
 });
 
-// Admins can set any status. Users can only close their own ticket.
+// Admin: any status. User: only CLOSED.
 ticketsRouter.patch('/:id/status', async (req, res) => {
   const user = currentUser(req);
   const { status } = updateStatusSchema.parse(req.body);

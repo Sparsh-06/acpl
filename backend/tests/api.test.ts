@@ -32,7 +32,6 @@ beforeEach(async () => {
   ]);
 });
 
-/** Logs in and returns a supertest agent that keeps the session cookie. */
 async function loginAs(email: string) {
   const agent = request.agent(app);
   const res = await agent.post('/api/auth/login').send({ email, password: PASSWORD });

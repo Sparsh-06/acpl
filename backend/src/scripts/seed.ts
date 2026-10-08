@@ -1,7 +1,4 @@
-/**
- * Resets the database and inserts demo data. Development only.
- *   npm run seed
- */
+// Dev only: wipes the DB and adds demo data.
 import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import { env } from '../config/env.js';

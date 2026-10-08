@@ -1,9 +1,11 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useState, type FormEvent } from 'react';
-import { Alert, Button, Field, Input } from '@/components/ui';
+import { Suspense, useEffect, useState, type FormEvent } from 'react';
+import { Alert, Button, Field, Input, Spinner } from '@/components/ui';
 import { ApiError, api, errorMessage } from '@/lib/api';
+import { useApi } from '@/lib/hooks';
+import type { User } from '@/lib/types';
 
 const DEMO_ACCOUNTS = [
   { label: 'Admin', email: 'admin@example.com', password: 'Admin@12345' },
@@ -19,6 +21,16 @@ function LoginForm() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Already signed in? Skip the login page.
+  const session = useApi<{ user: User }>('/auth/me');
+  useEffect(() => {
+    if (session.data) router.replace('/tickets');
+  }, [session.data, router]);
+
+  if (session.loading || session.data) {
+    return <Spinner className="size-8 text-indigo-600" />;
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -115,7 +127,6 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <main className="grid min-h-screen place-items-center bg-gradient-to-b from-indigo-50 to-slate-50 px-4 py-12">
-      {/* useSearchParams needs a Suspense boundary in the Next.js App Router */}
       <Suspense>
         <LoginForm />
       </Suspense>

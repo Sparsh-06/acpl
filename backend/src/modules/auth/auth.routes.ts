@@ -16,11 +16,9 @@ export const authRouter = Router();
 authRouter.post('/login', async (req, res) => {
   const { email, password } = loginSchema.parse(req.body);
 
-  // passwordHash has select: false on the model, so ask for it explicitly here.
   const user = await User.findOne({ email }).select('+passwordHash');
   const passwordOk = user ? await bcrypt.compare(password, user.passwordHash) : false;
 
-  // Same message for "no such email" and "wrong password", so emails can't be discovered.
   if (!user || !passwordOk) throw unauthorized('Invalid email or password');
   if (!user.isActive) throw new AppError(403, 'ACCOUNT_DISABLED', 'This account has been deactivated');
 

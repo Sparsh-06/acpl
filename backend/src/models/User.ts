@@ -8,7 +8,6 @@ const userSchema = new Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 100 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    // select: false means the hash is never loaded unless a query explicitly asks for it.
     passwordHash: { type: String, required: true, select: false },
     role: { type: String, enum: ROLES, required: true, default: 'USER' },
     isActive: { type: Boolean, required: true, default: true },

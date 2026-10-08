@@ -4,7 +4,6 @@ import { env } from './config/env.js';
 
 async function main() {
   await mongoose.connect(env.MONGODB_URI);
-  // Make sure unique indexes (e.g. user email, ticket number) exist before serving traffic.
   await mongoose.syncIndexes();
   console.log('Connected to MongoDB');
 

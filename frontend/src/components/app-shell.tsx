@@ -13,7 +13,6 @@ import { Avatar, ErrorState, Spinner } from './ui';
 
 const CurrentUserContext = createContext<User | null>(null);
 
-/** The signed-in user. Only usable inside <AppShell>, which guarantees a user exists. */
 export function useCurrentUser() {
   const user = useContext(CurrentUserContext);
   if (!user) throw new Error('useCurrentUser must be used inside <AppShell>');
@@ -26,11 +25,6 @@ const NAV = [
   { href: '/profile', label: 'Profile', adminOnly: false },
 ];
 
-/**
- * Wraps every signed-in page: loads the current user, redirects to /login if there
- * is no valid session, and renders the navigation. (The real security checks happen
- * in the API; this only decides what to show.)
- */
 export function AppShell({ children }: { children: ReactNode }) {
   const { data, error, loading, reload } = useApi<{ user: User }>('/auth/me');
   const router = useRouter();

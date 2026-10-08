@@ -11,7 +11,6 @@ import { formatDate } from '@/lib/format';
 import { useApi } from '@/lib/hooks';
 import type { Role, User } from '@/lib/types';
 
-// null = dialog closed, 'new' = create form, a User = edit form for that user
 type DialogState = null | 'new' | User;
 
 export default function UsersPage() {
@@ -22,7 +21,6 @@ export default function UsersPage() {
 
   const { data, error, loading, reload } = useApi<{ users: User[] }>(`/users?q=${encodeURIComponent(q)}`);
 
-  // The API enforces this too (403); this just shows a friendly message.
   if (me.role !== 'ADMIN') {
     return (
       <Card>
@@ -170,7 +168,6 @@ function UserForm({ user, isSelf, onSaved, onCancel }: { user: User | null; isSe
     setSaving(true);
     try {
       if (user) {
-        // Editing: only send a password if a new one was typed.
         await api(`/users/${user.id}`, { method: 'PATCH', json: { name, email, role, ...(password && { password }) } });
         toast.success('User updated');
       } else {

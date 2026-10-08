@@ -11,11 +11,7 @@ declare global {
   }
 }
 
-/**
- * Verifies the session cookie AND re-loads the user from the database.
- * Loading the user on every request means a deactivated user or a role change
- * takes effect immediately, instead of waiting for the token to expire.
- */
+// Re-checks the user in the DB on every request.
 export const requireAuth: RequestHandler = async (req, _res, next) => {
   const token: string | undefined = req.cookies?.[SESSION_COOKIE];
   if (!token) throw unauthorized();
@@ -36,7 +32,6 @@ export const requireAuth: RequestHandler = async (req, _res, next) => {
   next();
 };
 
-/** Must run after requireAuth. */
 export const requireRole =
   (...roles: Role[]): RequestHandler =>
   (req, _res, next) => {
@@ -44,7 +39,6 @@ export const requireRole =
     next();
   };
 
-/** The authenticated user; only call inside routes protected by requireAuth. */
 export const currentUser = (req: Request): UserDocument => {
   if (!req.user) throw unauthorized();
   return req.user;

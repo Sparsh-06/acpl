@@ -184,7 +184,6 @@ function Comments({ ticketId, comments, onAdded }: { ticketId: string; comments:
   );
 }
 
-/** Admin only: set any status. */
 function ChangeStatus({ ticket, onUpdated }: { ticket: Ticket; onUpdated: (t: Ticket) => void }) {
   const [status, setStatus] = useState<TicketStatus>(ticket.status);
   const [saving, setSaving] = useState(false);
@@ -221,7 +220,6 @@ function ChangeStatus({ ticket, onUpdated }: { ticket: Ticket; onUpdated: (t: Ti
   );
 }
 
-/** Ticket owner: close their own ticket. */
 function CloseTicket({ ticket, onUpdated }: { ticket: Ticket; onUpdated: (t: Ticket) => void }) {
   const [closing, setClosing] = useState(false);
 

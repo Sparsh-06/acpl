@@ -47,7 +47,6 @@ const fieldState = (error?: string) =>
 
 type FieldProps = { label: string; error?: string; hint?: string; children: (id: string, describedBy?: string) => ReactNode };
 
-/** Label + control + error/hint, wired up with ids for screen readers. */
 export function Field({ label, error, hint, children }: FieldProps) {
   const id = useId();
   const messageId = `${id}-message`;
@@ -160,7 +159,6 @@ export function Avatar({ name, className }: { name: string; className?: string }
   );
 }
 
-/** Accessible modal built on the native <dialog> element (focus trap + Esc for free). */
 export function Dialog({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {

@@ -3,10 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, api } from './api';
 
-/**
- * Loads data from the API and tracks loading / error state.
- * Re-fetches whenever `path` changes; call `reload()` to fetch again manually.
- */
 export function useApi<T>(path: string) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<ApiError | null>(null);

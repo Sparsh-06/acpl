@@ -10,11 +10,6 @@ export class ApiError extends Error {
 
 type ApiOptions = { method?: string; json?: unknown };
 
-/**
- * Small fetch wrapper. Requests go to "/api/..." on the Next.js server, which forwards
- * them to Express (see next.config.ts). Because it's the same origin, the browser sends
- * the httpOnly session cookie automatically. Every failure becomes an ApiError.
- */
 export async function api<T>(path: string, { method = 'GET', json }: ApiOptions = {}): Promise<T> {
   let response: Response;
   try {
@@ -27,7 +22,7 @@ export async function api<T>(path: string, { method = 'GET', json }: ApiOptions 
     throw new ApiError(0, 'Cannot reach the server. Check your connection and try again.');
   }
 
-  // Session expired or account deactivated while using the app: go back to login.
+  // Session expired: back to login.
   if (response.status === 401 && !path.startsWith('/auth/')) {
     window.location.assign('/login?expired=1');
   }

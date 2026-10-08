@@ -1,9 +1,6 @@
 import type { ToObjectOptions } from 'mongoose';
 
-/**
- * Applied to every model's toJSON(): expose `id` instead of `_id`, drop `__v`,
- * and make sure a password hash can never be serialized into a response.
- */
+// Hide _id, __v and passwordHash in API responses.
 export const jsonOptions: ToObjectOptions = {
   virtuals: true,
   versionKey: false,

@@ -10,11 +10,9 @@ const ticketSchema = new Schema(
     status: { type: String, enum: TICKET_STATUSES, required: true, default: 'OPEN' },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   },
-  // timestamps: true adds createdAt and updatedAt automatically.
   { timestamps: true, toJSON: jsonOptions },
 );
 
-// Users list their own tickets, newest activity first.
 ticketSchema.index({ createdBy: 1, updatedAt: -1 });
 
 export const Ticket = model('Ticket', ticketSchema);

@@ -5,7 +5,6 @@ import { authRouter } from './modules/auth/auth.routes.js';
 import { ticketsRouter } from './modules/tickets/tickets.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
 
-/** Builds the Express app without starting a server, so tests can use it directly. */
 export function createApp() {
   const app = express();
 

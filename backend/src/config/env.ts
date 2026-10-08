@@ -1,7 +1,5 @@
 import { z } from 'zod';
 
-// Validate configuration once at startup so the app fails fast with a clear
-// message instead of failing later with a confusing runtime error.
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),

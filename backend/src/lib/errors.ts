@@ -1,8 +1,3 @@
-/**
- * Every expected failure is thrown as an AppError and converted to a consistent
- * JSON shape by the error middleware:
- *   { "error": { "code": "NOT_FOUND", "message": "Ticket not found", "details": ... } }
- */
 export class AppError extends Error {
   constructor(
     public readonly status: number,

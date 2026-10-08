@@ -6,7 +6,6 @@ export const SESSION_COOKIE = 'session';
 
 const ttlSeconds = () => Math.round(env.SESSION_TTL_HOURS * 3600);
 
-/** The token only carries the user id. Role and active status are re-read from the DB on every request. */
 export const signSessionToken = (userId: string) =>
   jwt.sign({}, env.JWT_SECRET, { subject: userId, expiresIn: ttlSeconds(), algorithm: 'HS256' });
 
@@ -16,10 +15,7 @@ export const verifySessionToken = (token: string): string => {
   return payload.sub;
 };
 
-/**
- * httpOnly: JavaScript (including any injected script) cannot read the token.
- * sameSite=lax: the browser won't attach it to cross-site POST/PATCH requests (CSRF mitigation).
- */
+// httpOnly: JS can't read it. sameSite: blocks CSRF.
 export const sessionCookieOptions = (): CookieOptions => ({
   httpOnly: true,
   sameSite: 'lax',
