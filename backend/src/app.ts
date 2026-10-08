@@ -1,6 +1,5 @@
 import cookieParser from 'cookie-parser';
 import express from 'express';
-import helmet from 'helmet';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { ticketsRouter } from './modules/tickets/tickets.routes.js';
@@ -10,10 +9,6 @@ import { usersRouter } from './modules/users/users.routes.js';
 export function createApp() {
   const app = express();
 
-  // Requests arrive through the Next.js proxy; trust one hop so rate limiting sees the real client IP.
-  app.set('trust proxy', 1);
-
-  app.use(helmet());
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
 

@@ -43,7 +43,7 @@ async function loginAs(email: string) {
 async function createTicket(agent: Awaited<ReturnType<typeof loginAs>>, title = 'Printer is on fire') {
   const res = await agent.post('/api/tickets').send({ title, description: 'Smoke is coming out of the printer.' });
   expect(res.status).toBe(201);
-  return res.body.ticket as { id: string; key: string; status: string };
+  return res.body.ticket as { id: string; status: string };
 }
 
 describe('authentication', () => {
@@ -100,7 +100,7 @@ describe('user management authorization', () => {
     expect(duplicate.status).toBe(409);
 
     const search = await admin.get('/api/users').query({ q: 'car' });
-    expect(search.body.items).toHaveLength(1);
+    expect(search.body.users).toHaveLength(1);
 
     const updated = await admin.patch(`/api/users/${created.body.user.id}`).send({ role: 'ADMIN', isActive: false });
     expect(updated.body.user).toMatchObject({ role: 'ADMIN', isActive: false });
@@ -110,24 +110,28 @@ describe('user management authorization', () => {
     const admin = await loginAs('admin@test.dev');
     const me = await admin.get('/api/auth/me');
     const res = await admin.patch(`/api/users/${me.body.user.id}`).send({ isActive: false });
-    expect(res.status).toBe(409);
+    expect(res.status).toBe(400);
   });
 });
 
 describe('tickets', () => {
-  it('lets a user create a ticket with a sequential key', async () => {
+  it('lets a user create a ticket', async () => {
     const alice = await loginAs('alice@test.dev');
-    const first = await createTicket(alice);
-    const second = await createTicket(alice, 'Second problem here');
-    expect(first).toMatchObject({ key: 'TCK-0001', status: 'OPEN' });
-    expect(second.key).toBe('TCK-0002');
+    const ticket = await createTicket(alice);
+    expect(ticket.status).toBe('OPEN');
   });
 
   it('validates ticket input', async () => {
     const alice = await loginAs('alice@test.dev');
-    const res = await alice.post('/api/tickets').send({ title: 'Hi', priority: 'WHENEVER' });
+    const res = await alice.post('/api/tickets').send({ title: 'Hi' });
     expect(res.status).toBe(400);
-    expect(Object.keys(res.body.error.details.fieldErrors)).toEqual(expect.arrayContaining(['title', 'description', 'priority']));
+    expect(Object.keys(res.body.error.details.fieldErrors)).toEqual(expect.arrayContaining(['title', 'description']));
+  });
+
+  it('only lets users (not admins) create tickets', async () => {
+    const admin = await loginAs('admin@test.dev');
+    const res = await admin.post('/api/tickets').send({ title: 'Admin ticket', description: 'Admins should not create these.' });
+    expect(res.status).toBe(403);
   });
 
   it("hides other users' tickets (404, not 403) and scopes lists to the owner", async () => {
@@ -137,42 +141,43 @@ describe('tickets', () => {
 
     expect((await bob.get(`/api/tickets/${ticket.id}`)).status).toBe(404);
     expect((await bob.post(`/api/tickets/${ticket.id}/comments`).send({ body: 'sneaky' })).status).toBe(404);
-    expect((await bob.post(`/api/tickets/${ticket.id}/close`)).status).toBe(404);
-    expect((await bob.get('/api/tickets')).body.total).toBe(0);
-    expect((await alice.get('/api/tickets')).body.total).toBe(1);
+    expect((await bob.patch(`/api/tickets/${ticket.id}/status`).send({ status: 'CLOSED' })).status).toBe(404);
+    expect((await bob.get('/api/tickets')).body.tickets).toHaveLength(0);
+    expect((await alice.get('/api/tickets')).body.tickets).toHaveLength(1);
   });
 
-  it('forbids users from admin-only ticket operations', async () => {
+  it('lets a user close their own ticket but not set other statuses', async () => {
     const alice = await loginAs('alice@test.dev');
     const ticket = await createTicket(alice);
-    expect((await alice.patch(`/api/tickets/${ticket.id}`).send({ status: 'RESOLVED' })).status).toBe(403);
+
+    const resolve = await alice.patch(`/api/tickets/${ticket.id}/status`).send({ status: 'RESOLVED' });
+    expect(resolve.status).toBe(403);
+
+    const close = await alice.patch(`/api/tickets/${ticket.id}/status`).send({ status: 'CLOSED' });
+    expect(close.status).toBe(200);
+    expect(close.body.ticket.status).toBe('CLOSED');
   });
 
-  it('lets admins assign, change status, search and filter', async () => {
+  it('lets admins see all tickets, search, filter and change status', async () => {
     const alice = await loginAs('alice@test.dev');
     const admin = await loginAs('admin@test.dev');
     const ticket = await createTicket(alice);
-    const me = (await admin.get('/api/auth/me')).body.user;
+    await createTicket(alice, 'Something else entirely');
 
-    const updated = await admin.patch(`/api/tickets/${ticket.id}`).send({ status: 'IN_PROGRESS', assigneeId: me.id });
-    expect(updated.status).toBe(200);
-    expect(updated.body.ticket).toMatchObject({ status: 'IN_PROGRESS', assignee: { id: me.id } });
-    expect(updated.body.ticket.activity.map((a: { type: string }) => a.type)).toEqual(['CREATED', 'STATUS_CHANGED', 'ASSIGNED']);
+    expect((await admin.get('/api/tickets')).body.tickets).toHaveLength(2);
 
-    const invalidStatus = await admin.patch(`/api/tickets/${ticket.id}`).send({ status: 'DONE' });
-    expect(invalidStatus.status).toBe(400);
+    const updated = await admin.patch(`/api/tickets/${ticket.id}/status`).send({ status: 'IN_PROGRESS' });
+    expect(updated.body.ticket.status).toBe('IN_PROGRESS');
 
-    const aliceId = (await alice.get('/api/auth/me')).body.user.id;
-    const assignToUser = await admin.patch(`/api/tickets/${ticket.id}`).send({ assigneeId: aliceId });
-    expect(assignToUser.status).toBe(400);
+    const invalid = await admin.patch(`/api/tickets/${ticket.id}/status`).send({ status: 'DONE' });
+    expect(invalid.status).toBe(400);
 
-    const filtered = await admin.get('/api/tickets').query({ status: 'IN_PROGRESS', assignee: 'me', q: 'printer' });
-    expect(filtered.body.total).toBe(1);
-    expect(filtered.body.counts.IN_PROGRESS).toBe(1);
-    expect((await admin.get('/api/tickets').query({ q: 'TCK-0001' })).body.total).toBe(1);
+    const filtered = await admin.get('/api/tickets').query({ status: 'IN_PROGRESS', q: 'printer' });
+    expect(filtered.body.tickets).toHaveLength(1);
+    expect(filtered.body.tickets[0].createdBy.name).toBe('Alice');
   });
 
-  it('supports comments and lets the owner close their ticket', async () => {
+  it('shows comments with author and time', async () => {
     const alice = await loginAs('alice@test.dev');
     const admin = await loginAs('admin@test.dev');
     const ticket = await createTicket(alice);
@@ -180,15 +185,10 @@ describe('tickets', () => {
     expect((await admin.post(`/api/tickets/${ticket.id}/comments`).send({ body: 'Looking into it' })).status).toBe(201);
     expect((await alice.post(`/api/tickets/${ticket.id}/comments`).send({ body: '   ' })).status).toBe(400);
 
-    const closed = await alice.post(`/api/tickets/${ticket.id}/close`);
-    expect(closed.body.ticket.status).toBe('CLOSED');
-    expect(closed.body.permissions.canComment).toBe(false);
-
     const detail = await alice.get(`/api/tickets/${ticket.id}`);
     expect(detail.body.comments).toHaveLength(1);
-    expect(detail.body.comments[0]).toMatchObject({ body: 'Looking into it', author: { name: 'Admin' } });
-
-    expect((await alice.post(`/api/tickets/${ticket.id}/comments`).send({ body: 'one more thing' })).status).toBe(409);
+    expect(detail.body.comments[0]).toMatchObject({ body: 'Looking into it', author: { name: 'Admin', role: 'ADMIN' } });
+    expect(detail.body.comments[0].createdAt).toBeDefined();
   });
 
   it('returns 404 for unknown ids and routes', async () => {

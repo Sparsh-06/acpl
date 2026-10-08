@@ -4,7 +4,6 @@ import { SESSION_COOKIE, verifySessionToken } from '../lib/session.js';
 import { User, type Role, type UserDocument } from '../models/User.js';
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user?: UserDocument;
